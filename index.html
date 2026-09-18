@@ -90,10 +90,24 @@
 </head>
 <body id="app-body" class="flex flex-col h-[100dvh] w-full transition-colors duration-500 bg-slate-900">
 
-    <!-- Toast de Notificação (Conquistas) -->
+    <!-- OVERLAY DE BLOQUEIO DE TELA -->
+    <div id="screen-lock-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200] hidden flex-col items-center justify-center opacity-0 transition-opacity duration-300">
+        <i class="fa-solid fa-lock text-6xl text-theme mb-6"></i>
+        <h2 class="text-white text-2xl font-black mb-8 tracking-wide">Tela Bloqueada</h2>
+        
+        <!-- Botão interativo de pressionar -->
+        <button id="btn-unlock" class="relative overflow-hidden bg-slate-800 border-2 border-theme rounded-2xl px-10 py-5 text-white font-bold text-lg shadow-2xl outline-none select-none">
+            <!-- Barra de progresso invisível que cresce -->
+            <div id="unlock-progress" class="absolute left-0 top-0 bottom-0 bg-theme/40 w-0 transition-all duration-[1200ms] ease-linear"></div>
+            <span class="relative z-10 flex items-center gap-3"><i class="fa-solid fa-fingerprint text-2xl"></i> Segure para Desbloquear</span>
+        </button>
+        <p class="text-slate-400 mt-6 text-sm">Previne toques acidentais no bolso.</p>
+    </div>
+
+    <!-- Toast de Notificação Geral/Conquistas -->
     <div id="toast-notification" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-theme text-white px-6 py-3 rounded-full shadow-2xl font-black text-sm flex items-center gap-3 z-[100] transition-all duration-500 -translate-y-24 opacity-0 pointer-events-none tracking-wide">
-        <i class="fa-solid fa-medal text-xl animate-bounce"></i>
-        <span id="toast-text">Conquista Desbloqueada!</span>
+        <i class="fa-solid fa-bell text-xl animate-bounce"></i>
+        <span id="toast-text">Notificação!</span>
     </div>
 
     <header class="pt-12 pb-4 px-6 flex justify-between items-center z-10 w-full shrink-0">
@@ -120,9 +134,13 @@
                 </div>
             </div>
             
-            <div class="flex justify-around items-center w-full max-w-sm px-4 mb-6 shrink-0">
+            <div class="flex justify-around items-center w-full max-w-sm px-4 mb-6 shrink-0 gap-2">
                 <button id="sw-btn-reset-lap" onclick="swResetOrLap()" class="btn-circle bg-slate-700 text-slate-300 w-16 h-16 text-xl">
                     <i id="sw-icon-reset-lap" class="fa-solid fa-flag"></i>
+                </button>
+                <!-- Botão de Bloqueio -->
+                <button onclick="lockScreen()" class="btn-circle bg-slate-800 text-slate-400 border border-slate-700 w-14 h-14 text-lg transition hover:text-white">
+                    <i class="fa-solid fa-lock"></i>
                 </button>
                 <button id="sw-btn-start-pause" onclick="swStartPause()" class="btn-circle bg-theme text-white w-16 h-16 text-xl shadow-theme">
                     <i id="sw-icon-start-pause" class="fa-solid fa-play"></i>
@@ -174,9 +192,13 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-around items-center w-full px-4">
+                <div class="flex justify-around items-center w-full px-4 gap-2">
                     <button id="tm-btn-reset" onclick="tmReset()" class="btn-circle bg-slate-700 text-slate-300 w-16 h-16 text-xl shrink-0">
                         <i class="fa-solid fa-stop"></i>
+                    </button>
+                    <!-- Botão de Bloqueio -->
+                    <button onclick="lockScreen()" class="btn-circle bg-slate-800 text-slate-400 border border-slate-700 w-14 h-14 text-lg transition hover:text-white shrink-0">
+                        <i class="fa-solid fa-lock"></i>
                     </button>
                     <button id="tm-btn-start-pause" onclick="tmStartPause()" class="btn-circle bg-theme text-white w-16 h-16 text-xl shadow-theme shrink-0">
                         <i id="tm-icon-start-pause" class="fa-solid fa-play"></i>
@@ -205,7 +227,7 @@
                 </div>
             </div>
 
-            <div class="w-full max-w-sm shrink-0 flex flex-col items-center mt-auto pb-2">
+            <div class="w-full max-w-md shrink-0 flex flex-col items-center mt-auto pb-2">
                 
                 <div id="int-presets-wrapper" class="w-full mb-3">
                     <div id="int-presets" class="flex overflow-x-auto no-scrollbar gap-2 pb-1 items-center px-1 snap-x">
@@ -256,9 +278,13 @@
                     </div>
                 </div>
 
-                <div class="flex justify-around items-center w-full px-6 mb-2">
+                <div class="flex justify-around items-center w-full px-4 mb-2 gap-2">
                     <button id="int-btn-reset" onclick="intReset()" class="btn-circle bg-slate-700 text-slate-300 w-16 h-16 text-xl shrink-0 shadow-lg">
                         <i class="fa-solid fa-stop"></i>
+                    </button>
+                    <!-- Botão de Bloqueio -->
+                    <button onclick="lockScreen()" class="btn-circle bg-slate-800 text-slate-400 border border-slate-700 w-14 h-14 text-lg transition hover:text-white shrink-0">
+                        <i class="fa-solid fa-lock"></i>
                     </button>
                     <button id="int-btn-start-pause" onclick="intStartPause()" class="btn-circle bg-theme text-white w-16 h-16 text-xl shadow-theme shrink-0">
                         <i id="int-icon-start-pause" class="fa-solid fa-play"></i>
@@ -315,7 +341,7 @@
             </div>
         </section>
 
-        <!-- ================= CARD INVISÍVEL PARA COMPARTILHAMENTO ================= -->
+        <!-- ================= CARD INVISÍVEL PARA COMPARTILHAMENTO DE STATUS ================= -->
         <div id="share-card-container" class="fixed -left-[2000px] top-0 pointer-events-none">
             <div id="share-card" class="w-[600px] h-[800px] bg-slate-900 flex flex-col justify-between items-center p-12 rounded-3xl border-8 border-theme">
                 <div class="text-center mt-10">
@@ -357,6 +383,12 @@
         <div id="modal-options-preset" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 px-4">
             <div class="bg-slate-800 p-4 rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl transform scale-95 transition-transform duration-300" id="modal-options-preset-content">
                 <h3 class="text-slate-400 text-sm font-semibold text-center mb-4 pb-2 border-b border-slate-700/50 uppercase tracking-widest" id="options-title">Opções</h3>
+                
+                <!-- Botão de Compartilhar Link -->
+                <button onclick="triggerSharePresetLink()" class="w-full py-4 text-emerald-400 text-lg font-semibold bg-emerald-900/30 border border-emerald-800/50 rounded-xl mb-3 flex items-center justify-center gap-3 transition hover:bg-emerald-800/50">
+                    <i class="fa-solid fa-link"></i> Compartilhar Link
+                </button>
+                
                 <button onclick="triggerEditPreset()" class="w-full py-4 text-white text-lg font-semibold bg-slate-700/50 rounded-xl mb-3 flex items-center justify-center gap-3 transition">
                     <i class="fa-solid fa-pen text-blue-400"></i> Renomear Favorito
                 </button>
@@ -438,7 +470,7 @@
     </nav>
 
     <script>
-        // ================= PWA SETUP =================
+        // ================= PWA SETUP 100% OFFLINE REAL =================
         const manifest = {
             name: "FitTimer Pro", short_name: "FitTimer", display: "standalone",
             background_color: "#0f172a", theme_color: "#0f172a",
@@ -447,7 +479,27 @@
         const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
         document.getElementById('manifest-link').href = URL.createObjectURL(manifestBlob);
         
-        const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => self.clients.claim()); self.addEventListener('fetch', e => {});`;
+        // Service Worker Aprimorado: Faz cache automático do Tailwind, FontAwesome e Google Fonts.
+        const swCode = `
+            const CACHE_NAME = 'fittimer-pwa-v2';
+            self.addEventListener('install', e => self.skipWaiting());
+            self.addEventListener('activate', e => self.clients.claim());
+            self.addEventListener('fetch', e => {
+                if(e.request.method !== 'GET') return;
+                e.respondWith(
+                    caches.match(e.request).then(cached => {
+                        const fetched = fetch(e.request).then(netRes => {
+                            if(netRes && netRes.status === 200 && e.request.url.startsWith('http')) {
+                                const clone = netRes.clone();
+                                caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+                            }
+                            return netRes;
+                        }).catch(() => cached);
+                        return cached || fetched;
+                    })
+                );
+            });
+        `;
         const swBlob = new Blob([swCode], { type: 'application/javascript' });
         if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
 
@@ -492,6 +544,42 @@
             const m = document.getElementById('modal-settings'); const c = document.getElementById('modal-settings-content');
             m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300);
         }
+
+        // ================= BLOQUEIO DE TELA =================
+        const lockOverlay = document.getElementById('screen-lock-overlay');
+        const btnUnlock = document.getElementById('btn-unlock');
+        const progUnlock = document.getElementById('unlock-progress');
+        let unlockTimeout;
+
+        function lockScreen() {
+            lockOverlay.classList.remove('hidden');
+            setTimeout(() => lockOverlay.classList.remove('opacity-0'), 50);
+        }
+
+        function startUnlock(e) {
+            e.preventDefault(); // Previne click fantasma
+            progUnlock.style.width = '100%';
+            unlockTimeout = setTimeout(() => {
+                // Sucesso ao segurar
+                lockOverlay.classList.add('opacity-0');
+                setTimeout(() => { lockOverlay.classList.add('hidden'); progUnlock.style.width = '0%'; }, 300);
+                if(navigator.vibrate) navigator.vibrate(150);
+            }, 1200); // 1.2s segurando para desbloquear
+        }
+
+        function cancelUnlock(e) {
+            e.preventDefault();
+            clearTimeout(unlockTimeout);
+            progUnlock.style.width = '0%';
+        }
+
+        btnUnlock.addEventListener('touchstart', startUnlock, {passive: false});
+        btnUnlock.addEventListener('touchend', cancelUnlock);
+        btnUnlock.addEventListener('touchmove', cancelUnlock); // Cancela se arrastar
+        btnUnlock.addEventListener('mousedown', startUnlock);
+        btnUnlock.addEventListener('mouseup', cancelUnlock);
+        btnUnlock.addEventListener('mouseleave', cancelUnlock);
+
 
         // ================= ÁUDIO E WAKE LOCK =================
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
@@ -722,6 +810,74 @@
             } catch(e) { container.classList.add('-left-[2000px]'); }
         }
 
+        // --- SISTEMA DE COMPARTILHAMENTO DE PRESETS (VIA LINK) ---
+        function triggerSharePresetLink() {
+            closeOptionsModal();
+            let dataToShare;
+            if (presetContext === 'timer') {
+                const p = tmPresets.find(x => x.id === selectedOptionsPresetId);
+                if(!p) return;
+                dataToShare = { type: 'timer', n: p.name, sec: p.sec };
+            } else {
+                const p = myPresets.find(x => x.id === selectedOptionsPresetId);
+                if(!p) return;
+                dataToShare = { type: 'hiit', n: p.name, w: p.work, r: p.rest, ro: p.rounds, wu: p.warmup };
+            }
+
+            const jsonStr = JSON.stringify(dataToShare);
+            const b64 = btoa(encodeURIComponent(jsonStr)); // Codifica sem caracteres ruins
+            const shareUrl = window.location.origin + window.location.pathname + "?p=" + b64;
+            
+            // Copia pro teclado
+            if(navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareUrl).then(() => showToast("Link copiado pro teclado!")).catch(fallbackCopy);
+            } else { fallbackCopy(); }
+
+            function fallbackCopy() {
+                const ta = document.createElement('textarea'); ta.value = shareUrl; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                showToast("Link copiado!");
+            }
+        }
+
+        function checkSharedLinkOnLoad() {
+            const params = new URLSearchParams(window.location.search);
+            const encodedData = params.get('p');
+            if (encodedData) {
+                try {
+                    const data = JSON.parse(decodeURIComponent(atob(encodedData)));
+                    if (data && data.n && data.type) {
+                        const confirmImport = confirm(`Alguém te enviou o treino "${data.n}". Deseja salvar nos seus favoritos?`);
+                        if (confirmImport) {
+                            if (data.type === 'timer') {
+                                const newId = 't_' + Date.now();
+                                tmPresets.push({ id: newId, name: data.n, sec: data.sec || 60 });
+                                localStorage.setItem(STORAGE_TM_PRESETS_KEY, JSON.stringify(tmPresets));
+                                currentActiveTmPresetId = newId;
+                                localStorage.setItem('fittimer_activeTmPreset', newId);
+                                setTmPreset(data.sec || 60);
+                                renderTmPresets();
+                                switchTab('timer');
+                            } else if (data.type === 'hiit') {
+                                const newId = 'p_' + Date.now();
+                                myPresets.push({ id: newId, name: data.n, work: data.w||0, rest: data.r||0, rounds: data.ro||1, warmup: data.wu||0 });
+                                localStorage.setItem(STORAGE_PRESETS_KEY, JSON.stringify(myPresets));
+                                currentActivePresetId = newId;
+                                localStorage.setItem('fittimer_activePreset', newId);
+                                setHiitPreset(data.w||0, data.r||0, data.ro||1, data.wu||0);
+                                renderPresets();
+                                switchTab('interval');
+                            }
+                            showToast("Treino Salvo com Sucesso!");
+                        }
+                    }
+                } catch(e) { console.error("Link de treino inválido"); }
+                // Limpa o link da URL para não perguntar de novo se atualizar a página
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+
         // ================= UTILITÁRIOS GERAIS =================
         function formatTimeSW(timeInMs) {
             let date = new Date(timeInMs);
@@ -885,7 +1041,12 @@
                     tmTimeRemaining--; tmDisplay.innerHTML = formatTimeSimple(tmTimeRemaining);
                     updateSvgRing('tm-progress-ring', tmTimeRemaining, tmTotalSeconds);
                     
-                    if (tmTimeRemaining === 3) speakVoiceCoach("Três"); else if (tmTimeRemaining === 2) speakVoiceCoach("Dois"); else if (tmTimeRemaining === 1) speakVoiceCoach("Um"); else if (tmTimeRemaining <= 3 && tmTimeRemaining > 0) playBeep('short');
+                    // Voz Metade do Tempo
+                    if (tmTimeRemaining === Math.floor(tmTotalSeconds / 2) && tmTotalSeconds >= 20) speakVoiceCoach("Metade do tempo!");
+                    // Voz 10s Finais
+                    else if (tmTimeRemaining === 10 && tmTotalSeconds >= 15) speakVoiceCoach("Dez segundos!");
+                    // Regressiva
+                    else if (tmTimeRemaining === 3) speakVoiceCoach("Três"); else if (tmTimeRemaining === 2) speakVoiceCoach("Dois"); else if (tmTimeRemaining === 1) speakVoiceCoach("Um"); else if (tmTimeRemaining <= 3 && tmTimeRemaining > 0) playBeep('short');
                     
                     if (tmTimeRemaining <= 0) {
                         clearInterval(tmInterval); tmIsRunning = false; playBeep('end'); tmResetUI();
@@ -1168,7 +1329,14 @@
 
         function intTick() {
             intTimeRemaining--;
-            if (intTimeRemaining === 3) speakVoiceCoach("Três"); else if (intTimeRemaining === 2) speakVoiceCoach("Dois"); else if (intTimeRemaining === 1) speakVoiceCoach("Um"); else if (intTimeRemaining <= 3 && intTimeRemaining > 0) playBeep('short');
+            
+            // Avisos Inteligentes de Voz
+            if (intTimeRemaining === Math.floor(intPhaseTotalTime / 2) && intPhaseTotalTime >= 20) speakVoiceCoach("Metade do tempo!");
+            else if (intTimeRemaining === 10 && intPhaseTotalTime >= 15) speakVoiceCoach("Dez segundos!");
+            else if (intTimeRemaining === 3) speakVoiceCoach("Três"); 
+            else if (intTimeRemaining === 2) speakVoiceCoach("Dois"); 
+            else if (intTimeRemaining === 1) speakVoiceCoach("Um"); 
+            else if (intTimeRemaining <= 3 && intTimeRemaining > 0) playBeep('short');
 
             if (intTimeRemaining <= 0) {
                 playBeep('long');
@@ -1232,7 +1400,7 @@
             intStatus.innerText = "CONFIGURAÇÃO"; intStatus.className = "text-lg sm:text-xl font-bold uppercase tracking-widest text-slate-400"; intRoundsDisplay.innerText = "";
         }
         
-        // --- BOOT ---
+        // --- BOOT E RECEBIMENTO DE LINKS ---
         applyThemeSettings(); 
         loadLastConfigOffline(); 
         
@@ -1242,7 +1410,12 @@
             document.getElementById('tm-input-sec').value = (parseInt(lastTmSec) % 60).toString().padStart(2, '0');
         }
         
-        renderPresets(); renderTmPresets(); renderHistory(); switchTab('stopwatch');
+        renderPresets(); renderTmPresets(); renderHistory(); 
+        switchTab('stopwatch');
+
+        // Dispara ao carregar a página para checar se alguém te mandou um treino
+        checkSharedLinkOnLoad();
+
     </script>
 </body>
 </html>
