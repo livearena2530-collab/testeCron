@@ -797,7 +797,7 @@
             ];
             localStorage.setItem(STORAGE_TM_PRESETS_KEY, JSON.stringify(tmPresets));
         }
-        let currentActiveTmPresetId = null;
+        let currentActiveTmPresetId = localStorage.getItem('fittimer_activeTmPreset') || null;
 
         let tmTotalSeconds = 0, tmTimeRemaining = 0, tmInterval = null, tmIsRunning = false;
         const tmDisplay = document.getElementById('tm-display'), tmSetup = document.getElementById('tm-setup'), tmInputMin = document.getElementById('tm-input-min'), tmInputSec = document.getElementById('tm-input-sec'), tmBtnStartPause = document.getElementById('tm-btn-start-pause'), tmIconStartPause = document.getElementById('tm-icon-start-pause');
@@ -822,6 +822,7 @@
                     e.preventDefault(); 
                     if (!isLongPress) { 
                         currentActiveTmPresetId = p.id; 
+                        localStorage.setItem('fittimer_activeTmPreset', p.id);
                         setTmPreset(p.sec); 
                         renderTmPresets(); 
                     } 
@@ -847,11 +848,19 @@
                 tmTotalSeconds = ((parseInt(tmInputMin.value) || 0) * 60) + (parseInt(tmInputSec.value) || 0);
                 tmTimeRemaining = tmTotalSeconds; tmDisplay.innerHTML = formatTimeSimple(tmTimeRemaining);
                 updateSvgRing('tm-progress-ring', tmTimeRemaining, tmTotalSeconds);
+                
+                localStorage.setItem('fittimer_lastTmSec', tmTotalSeconds);
+                if (currentActiveTmPresetId !== null) {
+                    const preset = tmPresets.find(p => p.id === currentActiveTmPresetId);
+                    if (preset) {
+                        preset.sec = tmTotalSeconds;
+                        localStorage.setItem(STORAGE_TM_PRESETS_KEY, JSON.stringify(tmPresets));
+                    }
+                }
             }
         }
         
         function handleTmManualInput(e) {
-            if (currentActiveTmPresetId !== null) { currentActiveTmPresetId = null; renderTmPresets(); }
             if (e.type === 'blur' && e.target.type === 'number') e.target.value = e.target.value.padStart(2, '0');
             updateTmDisplayFromInputs();
         }
@@ -905,7 +914,8 @@
         // ================= PRESETS OFFLINE (HIIT & TIMER COMPARTILHADO) =================
         const STORAGE_CONFIG_KEY = 'fittimer_lastConfig'; 
         const STORAGE_PRESETS_KEY = 'fittimer_customPresets';
-        let currentEditPresetId = null; let selectedOptionsPresetId = null; let pressTimer; let isLongPress = false; let currentActivePresetId = null;
+        let currentEditPresetId = null; let selectedOptionsPresetId = null; let pressTimer; let isLongPress = false; 
+        let currentActivePresetId = localStorage.getItem('fittimer_activePreset') || null;
         let presetContext = 'hiit'; // 'hiit' ou 'timer'
 
         let myPresets = JSON.parse(localStorage.getItem(STORAGE_PRESETS_KEY));
@@ -930,7 +940,15 @@
                 btn.addEventListener('touchstart', startPress, {passive: true}); btn.addEventListener('touchend', cancelPress); btn.addEventListener('touchmove', cancelPress);
                 btn.addEventListener('mousedown', startPress); btn.addEventListener('mouseup', cancelPress); btn.addEventListener('mouseleave', cancelPress);
 
-                btn.onclick = (e) => { e.preventDefault(); if (!isLongPress) { currentActivePresetId = p.id; setHiitPreset(p.work, p.rest, p.rounds, p.warmup || 0); renderPresets(); } };
+                btn.onclick = (e) => { 
+                    e.preventDefault(); 
+                    if (!isLongPress) { 
+                        currentActivePresetId = p.id; 
+                        localStorage.setItem('fittimer_activePreset', p.id);
+                        setHiitPreset(p.work, p.rest, p.rounds, p.warmup || 0); 
+                        renderPresets(); 
+                    } 
+                };
                 container.appendChild(btn);
             });
             const addBtn = document.createElement('button'); addBtn.onclick = () => { presetContext = 'hiit'; openModalPreset(); };
@@ -970,9 +988,20 @@
 
         ['input', 'change', 'blur'].forEach(evt => {
             const handleManualInput = (e) => { 
-                if (currentActivePresetId !== null) { currentActivePresetId = null; renderPresets(); } 
                 if (evt === 'blur' && e.target.type === 'number') e.target.value = e.target.value.padStart(2, '0');
                 saveLastConfigOffline(); 
+                
+                // Auto-salvar no preset ativo se houver um
+                if (currentActivePresetId !== null) {
+                    const preset = myPresets.find(p => p.id === currentActivePresetId);
+                    if (preset) {
+                        preset.work = (parseInt(document.getElementById('int-work-m').value) || 0) * 60 + (parseInt(document.getElementById('int-work-s').value) || 0);
+                        preset.rest = (parseInt(document.getElementById('int-rest-m').value) || 0) * 60 + (parseInt(document.getElementById('int-rest-s').value) || 0);
+                        preset.rounds = parseInt(document.getElementById('int-input-rounds').value) || 1;
+                        preset.warmup = (parseInt(document.getElementById('int-warmup-m').value) || 0) * 60 + (parseInt(document.getElementById('int-warmup-s').value) || 0);
+                        localStorage.setItem(STORAGE_PRESETS_KEY, JSON.stringify(myPresets));
+                    }
+                }
             };
             document.getElementById('int-work-m').addEventListener(evt, handleManualInput); document.getElementById('int-work-s').addEventListener(evt, handleManualInput);
             document.getElementById('int-rest-m').addEventListener(evt, handleManualInput); document.getElementById('int-rest-s').addEventListener(evt, handleManualInput);
@@ -1052,6 +1081,7 @@
                     tmPresets.push({ id: newId, name: name, sec: (m * 60) + s });
                     currentActiveTmPresetId = newId;
                 }
+                localStorage.setItem('fittimer_activeTmPreset', currentActiveTmPresetId);
                 localStorage.setItem(STORAGE_TM_PRESETS_KEY, JSON.stringify(tmPresets)); renderTmPresets();
                 if(!currentEditPresetId) setTimeout(() => { const container = document.getElementById('tm-presets'); container.scrollLeft = container.scrollWidth; }, 300);
             } else {
@@ -1065,6 +1095,7 @@
                     myPresets.push({ id: newId, name: name, work: w, rest: r, rounds: parseInt(document.getElementById('int-input-rounds').value)||0, warmup: wu });
                     currentActivePresetId = newId;
                 }
+                localStorage.setItem('fittimer_activePreset', currentActivePresetId);
                 localStorage.setItem(STORAGE_PRESETS_KEY, JSON.stringify(myPresets)); renderPresets();
                 if(!currentEditPresetId) setTimeout(() => { const container = document.getElementById('int-presets'); container.scrollLeft = container.scrollWidth; }, 300);
             }
@@ -1073,9 +1104,9 @@
 
         function deletePreset(id) { 
             if (presetContext === 'timer') {
-                tmPresets = tmPresets.filter(p => p.id !== id); localStorage.setItem(STORAGE_TM_PRESETS_KEY, JSON.stringify(tmPresets)); if(currentActiveTmPresetId === id) currentActiveTmPresetId = null; renderTmPresets();
+                tmPresets = tmPresets.filter(p => p.id !== id); localStorage.setItem(STORAGE_TM_PRESETS_KEY, JSON.stringify(tmPresets)); if(currentActiveTmPresetId === id) { currentActiveTmPresetId = null; localStorage.removeItem('fittimer_activeTmPreset'); } renderTmPresets();
             } else {
-                myPresets = myPresets.filter(p => p.id !== id); localStorage.setItem(STORAGE_PRESETS_KEY, JSON.stringify(myPresets)); if(currentActivePresetId === id) currentActivePresetId = null; renderPresets(); 
+                myPresets = myPresets.filter(p => p.id !== id); localStorage.setItem(STORAGE_PRESETS_KEY, JSON.stringify(myPresets)); if(currentActivePresetId === id) { currentActivePresetId = null; localStorage.removeItem('fittimer_activePreset'); } renderPresets(); 
             }
         }
 
@@ -1202,7 +1233,16 @@
         }
         
         // --- BOOT ---
-        applyThemeSettings(); loadLastConfigOffline(); renderPresets(); renderTmPresets(); renderHistory(); switchTab('stopwatch');
+        applyThemeSettings(); 
+        loadLastConfigOffline(); 
+        
+        const lastTmSec = localStorage.getItem('fittimer_lastTmSec');
+        if (lastTmSec) {
+            document.getElementById('tm-input-min').value = Math.floor(parseInt(lastTmSec) / 60).toString().padStart(2, '0');
+            document.getElementById('tm-input-sec').value = (parseInt(lastTmSec) % 60).toString().padStart(2, '0');
+        }
+        
+        renderPresets(); renderTmPresets(); renderHistory(); switchTab('stopwatch');
     </script>
 </body>
 </html>
